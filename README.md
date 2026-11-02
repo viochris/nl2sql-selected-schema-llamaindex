@@ -301,6 +301,7 @@ On later runs, the build line is replaced by `⏳ [SYSTEM] Loading existing vect
 nl2sql-selected-schema-llamaindex/
 ├── selected-schema-query.py
 ├── selected-schema-chat.py
+├── dresses.db
 ├── LICENSE
 ├── README.md
 └── requirements.txt
@@ -310,11 +311,12 @@ nl2sql-selected-schema-llamaindex/
 | :--- | :--- |
 | `selected-schema-query.py` | Single-turn NL-to-SQL with selected schema retrieval |
 | `selected-schema-chat.py` | Multi-turn NL-to-SQL with PostgreSQL chat memory |
+| [`dresses.db`](dresses.db) | The SQLite sample database used in this project, which holds the `dresses` table |
 | `requirements.txt` | All Python dependencies, with notes inside the file |
 | `LICENSE` | MIT License |
 | `README.md` | You're reading it |
 
-The repository does not include a database or data. You need a PostgreSQL database that already contains the tables you want to query (see [Prepare the Database](#5-prepare-the-database)).
+The sample database [`dresses.db`](dresses.db) is included, so you can try the scripts right away with the SQLite option. To query your own data, use a PostgreSQL database or a SQLite file that already contains the tables you want to query (see [Prepare the Database](#5-prepare-the-database)).
 
 ---
 
@@ -440,7 +442,11 @@ GOOGLE_API_KEY=your_google_ai_studio_key
 CHROMA_API_KEY=your_chroma_cloud_key
 PHOENIX_API_KEY=your_phoenix_key
 PHOENIX_COLLECTOR_ENDPOINT=https://app.phoenix.arize.com/s/your-space/v1/traces
+# DATABASE_URL has two options. Keep only one of them active.
+# Option 1: PostgreSQL, a database server
 DATABASE_URL=postgresql://user:password@host:5432/dbname
+# Option 2: SQLite, a local database file
+# DATABASE_URL=sqlite:///dresses.db
 ASYNCPG_DATABASE_URL=postgresql+asyncpg://user:password@host:5432/dbname
 ```
 
@@ -457,8 +463,27 @@ ASYNCPG_DATABASE_URL=postgresql+asyncpg://user:password@host:5432/dbname
 >
 > Keep `.env` out of version control.
 
+**Choosing `DATABASE_URL`: PostgreSQL or SQLite**
+
+`DATABASE_URL` accepts any SQLAlchemy connection string, so the database that is queried can be either of these two. Use one line only.
+
+| Aspect | PostgreSQL | SQLite |
+| :--- | :--- | :--- |
+| Example | `postgresql://user:password@host:5432/dbname` | `sqlite:///dresses.db` |
+| What it is | A database server, which can run locally or be hosted (for example on Supabase) | A single file on your disk, with no server |
+| Setup | You need a running server and its credentials | Nothing to install, because SQLite is built into Python |
+| Extra driver | `psycopg2-binary` (already in `requirements.txt`) | None |
+| Access | Reachable from other machines with the credentials | Only the machine that has the file |
+| Best suited for | A shared or hosted database, and larger data | Local testing and small datasets such as the `dresses` sample |
+
+A few details to keep in mind:
+* In `sqlite:///dresses.db`, the path is relative to the folder where you run the script. For an absolute path, use four slashes, for example `sqlite:////home/user/data/dresses.db`.
+* With SQLite, the file must already contain your tables. The scripts do not create them. The included [`dresses.db`](dresses.db) already has the `dresses` table, so `DATABASE_URL=sqlite:///dresses.db` works as it is when you run the scripts from the project root.
+* `selected-schema-chat.py` still needs `ASYNCPG_DATABASE_URL`, which must point to a PostgreSQL database, because the chat history is stored there. SQLite replaces `DATABASE_URL` only. It does not replace the chat memory database.
+* The Chroma collection stores the table schemas of whichever database was used when it was built. If you switch `DATABASE_URL` to a different database, delete the collection as shown in step 7.
+
 #### 5. Prepare the Database
-The scripts read the table list from the database when they start, so the tables must already exist. The sample description in the code is written for a table named `dresses` with 14 columns: `Dress_ID`, `Style`, `Price`, `Rating`, `Size`, `Season`, `NeckLine`, `SleeveLength`, `waiseline`, `Material`, `FabricType`, `Decoration`, `Pattern Type`, and `Recommendation`.
+The scripts read the table list from the database when they start, so the tables must already exist. This project uses the SQLite database [`dresses.db`](dresses.db), which is included in the repository. The sample description in the code is written for its table named `dresses` with 14 columns: `Dress_ID`, `Style`, `Price`, `Rating`, `Size`, `Season`, `NeckLine`, `SleeveLength`, `waiseline`, `Material`, `FabricType`, `Decoration`, `Pattern Type`, and `Recommendation`.
 
 To describe your own tables, add an entry to `table_context_dict` in each script. The key must match the table name exactly.
 ```python
