@@ -31,7 +31,7 @@ Both scripts follow the same skeleton:
 5. Build the table schema index in ChromaDB, or load it if it already exists.
 6. Create the query engine (and, in the chat script, the chat engine with memory).
 7. Run an interactive loop in the terminal until you type an exit word.
-8. For every question, print the answer, the generated SQL, the retrieved schema nodes, the token usage, and the estimated cost.
+8. For every question, print the answer, the generated SQL, the source nodes (the rows the database returned), the token usage, and the estimated cost.
 9. If anything fails, print the traceback and a categorized summary, then exit with code 1.
 
 This repository uses `SQLTableRetrieverQueryEngine`. LlamaIndex also offers `NLSQLTableQueryEngine`, which takes a different approach. The difference is explained in [Two Approaches to NL-to-SQL](#-two-approaches-to-nl-to-sql).
@@ -42,7 +42,7 @@ This repository uses `SQLTableRetrieverQueryEngine`. LlamaIndex also offers `NLS
 * ♻️ **Index built once.** If the ChromaDB collection already has data, the scripts load the stored index and skip embedding.
 * 💬 **Two modes.** A single-turn script, and a multi-turn script whose chat history is stored in PostgreSQL.
 * 🔁 **Model fallback.** LiteLLM calls `gemini/gemini-2.5-flash` first, retries twice, and falls back to `gemini/gemini-3.5-flash`.
-* 🔍 **Transparent answers.** Every answer is printed together with the generated SQL and the schema nodes that were retrieved.
+* 🔍 **Transparent answers.** Every answer is printed together with the generated SQL and the raw rows the database returned.
 * 📊 **Token and cost tracking.** Token counts come from LlamaIndex's callback handler, and the cost is estimated per question from the LLM responses.
 * 🛰️ **Phoenix tracing.** Each script sends its traces to its own Phoenix project, so every step of a run can be inspected.
 * 🛡️ **Categorized error handling.** Database, quota, authentication, network, and processing errors each get a readable summary after the raw traceback.
@@ -161,7 +161,7 @@ Every tunable value lives directly in the scripts. Where the two scripts differ,
 7. Builds one `SQLTableSchema` per table, using the hand-written description when one exists.
 8. If the collection is empty, builds the `ObjectIndex` and stores it. Otherwise, loads the stored index.
 9. Creates a `SQLTableRetrieverQueryEngine` that retrieves the top 3 schemas.
-10. Starts the loop. After each answer it prints the SQL, the retrieved nodes, the token usage, and the estimated cost, then resets the counters.
+10. Starts the loop. After each answer it prints the SQL, the source nodes, the token usage, and the estimated cost, then resets the counters.
 
 **Key code.**
 ```python
@@ -276,9 +276,9 @@ An illustrative first-run session of the query script, based on the messages the
 🔍 [GENERATED SQL QUERY]:
 <the SQL that was executed>
 
-📂 [SOURCE NODES RECOVERED]: <number of retrieved nodes>
-   ↳ Node 1 | Score: <similarity score>
-     Content: <the table description that was retrieved>
+📂 [SOURCE NODES RECOVERED]: <number of source nodes>
+   ↳ Node 1 | Score: <score>
+     Content: <the rows returned by the database>
 
 📊 [LLAMAINDEX CALLBACK TOKEN OVERVIEW]:
 Model Used        : <model>
@@ -561,7 +561,7 @@ When something fails during setup or inside the loop, both scripts print the tra
 
 This project set out to solve five problems: prompts that grow with every table, schemas that carry no meaning, questions that have no context, history that disappears, and runs that are hard to inspect. The two scripts address them directly. Table descriptions are written by hand, embedded once, and stored in ChromaDB, so each question brings only the closest few schemas to the LLM. The query script handles one question at a time. The chat script adds a step that rewrites follow-ups and keeps its history in PostgreSQL. Phoenix tracing, token counting, and cost estimates make every run visible.
 
-A few design choices are worth pointing out. Building the index only when the collection is empty avoids paying for the same embeddings twice. Every answer is printed together with its SQL and the schema nodes behind it, so it can be checked. Keeping each script in a single readable file makes it easy to follow, run, and modify.
+A few design choices are worth pointing out. Building the index only when the collection is empty avoids paying for the same embeddings twice. Every answer is printed together with its SQL and the rows behind it, so it can be checked. Keeping each script in a single readable file makes it easy to follow, run, and modify.
 
 It is also not a finished product. Only one table has a hand-written description, the stored index does not refresh when tables change, and the generated SQL is run without a safety check. The sections below go through these gaps and lay out the next steps.
 
