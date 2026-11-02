@@ -1,42 +1,44 @@
 # ==============================================================================
-# nl2sql-selected-schema-llamaindex
-# Python 3.11 to 3.14 (arize-phoenix-otel needs 3.11 or newer, verified on 3.12)
-#
-# To install everything run pip install -r requirements.txt
-# The query script needs every package except asyncpg.
-# The chat script needs every package.
+# Dependencies for nl2sql-selected-schema-llamaindex
+# Covers selected-schema-query.py and selected-schema-chat.py
+# Python 3.10 or newer is recommended.
+# Versions are left unpinned. If pip reports a resolver conflict, install into a
+# clean virtual environment with a single "pip install -r requirements.txt".
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# LlamaIndex core and integrations (query and chat)
-# ------------------------------------------------------------------------------
-llama-index-core>=0.14.25,<0.15                  # Settings, SQLDatabase, ObjectIndex, SQLTableRetrieverQueryEngine, callbacks
-llama-index-llms-litellm>=0.8.0,<0.9             # LiteLLM wrapper used as Settings.llm (Gemini with fallbacks)
-llama-index-embeddings-google-genai>=0.6.0,<0.7  # GoogleGenAIEmbedding used to embed table schemas
-llama-index-vector-stores-chroma>=0.6.0,<0.7    # ChromaVectorStore for the schema index
+# --- LlamaIndex core (Settings, SQLDatabase, VectorStoreIndex, ObjectIndex,
+#     SQLTableRetrieverQueryEngine, CondenseQuestionChatEngine, Memory, callbacks)
+# The chat script uses llama_index.core.memory.Memory, so keep this package recent.
+llama-index-core
 
-# ------------------------------------------------------------------------------
-# LLM routing, vector database, and token counting (query and chat)
-# ------------------------------------------------------------------------------
-litellm>=1.106.6,<2                              # model routing, fallbacks, retries, and completion_cost()
-chromadb>=1.5.9,<2                               # chromadb.CloudClient (Chroma Cloud)
-tiktoken>=0.14.0,<1                              # tokenizer for TokenCountingHandler (downloads its encoding on first use)
+# --- LlamaIndex integrations imported directly by the scripts
+llama-index-vector-stores-chroma
+llama-index-embeddings-google-genai
+llama-index-llms-litellm
 
-# ------------------------------------------------------------------------------
-# Observability with Arize Phoenix over OpenTelemetry (query and chat)
-# ------------------------------------------------------------------------------
-arize-phoenix-otel>=0.17.2,<1                    # phoenix.otel.register()
-openinference-instrumentation-llama-index>=4.7.0,<5  # LlamaIndexInstrumentor
+# --- Vector database client (chromadb.CloudClient for Chroma Cloud)
+chromadb
 
-# ------------------------------------------------------------------------------
-# Runtime helpers (query and chat)
-# ------------------------------------------------------------------------------
-nest-asyncio>=1.6.0,<2                           # nest_asyncio.apply() for CLI and Jupyter
-python-dotenv>=1.2.4,<2                          # load_dotenv()
+# --- LLM routing and cost tracking (Gemini calls, fallbacks, completion_cost)
+litellm
 
-# ------------------------------------------------------------------------------
-# SQL layer
-# ------------------------------------------------------------------------------
-SQLAlchemy[asyncio]>=2.0,<2.2                    # create_engine and inspect. The asyncio extra adds greenlet for the async memory store
-psycopg2-binary>=2.9.13,<3                       # sync PostgreSQL driver for DATABASE_URL (use postgresql+psycopg2://...)
-asyncpg>=0.32.0,<1                               # chat script only, async PostgreSQL driver for ASYNCPG_DATABASE_URL (chat memory)
+# --- Token counting (cl100k_base encoder used by TokenCountingHandler)
+tiktoken
+
+# --- Tracing with Arize Phoenix (phoenix.otel.register and the LlamaIndex instrumentor)
+arize-phoenix-otel
+openinference-instrumentation-llama-index
+
+# --- SQL database access (create_engine, inspect, SQLDatabase)
+sqlalchemy
+# Synchronous PostgreSQL driver for DATABASE_URL (postgresql://...)
+psycopg2-binary
+# Async PostgreSQL driver for the chat memory (ASYNCPG_DATABASE_URL)
+# Needed by selected-schema-chat.py only. The query script does not use it.
+asyncpg
+
+# --- Utilities
+# Loads the .env file
+python-dotenv
+# Allows asyncio.run() to work inside already running event loops (CLI and Jupyter)
+nest-asyncio
