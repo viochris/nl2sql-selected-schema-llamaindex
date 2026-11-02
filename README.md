@@ -367,18 +367,18 @@ The new message and the history are combined into one standalone question. That 
 
 ## 🆚 Two Approaches to NL-to-SQL
 
-LlamaIndex offers more than one query engine for NL-to-SQL. This repository implements the first approach below. A second repository for `NLSQLTableQueryEngine` is being prepared, and this section explains how the two differ.
+LlamaIndex offers more than one query engine for NL-to-SQL. This repository implements the first approach below. A second repository implements `NLSQLTableQueryEngine`, and this section explains how the two differ.
 
 ### 📍 Where Each Approach Lives
 
 | Approach | Query engine | Location |
 | :--- | :--- | :--- |
 | **Selected schema retrieval** | `SQLTableRetrieverQueryEngine` | This repository (`selected-schema-query.py` and `selected-schema-chat.py`) |
-| **Fixed table list** | `NLSQLTableQueryEngine` | Coming soon |
+| **Fixed table list** | `NLSQLTableQueryEngine` | [nl2sql-all-schema-llamaindex](https://github.com/viochris/nl2sql-all-schema-llamaindex) |
 
 ### 🔍 What Differs
 
-| Aspect | `SQLTableRetrieverQueryEngine` (this repo) | `NLSQLTableQueryEngine` (coming soon) |
+| Aspect | `SQLTableRetrieverQueryEngine` (this repo) | `NLSQLTableQueryEngine` (companion repo) |
 | :--- | :--- | :--- |
 | How tables reach the prompt | The question is matched against stored table schemas, and only the closest ones are used | The schema of the configured tables is placed in the prompt for every question |
 | Who picks the tables | Similarity search, at question time | You, through the list of tables |
@@ -391,7 +391,7 @@ LlamaIndex offers more than one query engine for NL-to-SQL. This repository impl
 | Typical failure | The right table is not retrieved, so the SQL cannot be correct | The prompt becomes long or noisy when many tables are included |
 | Moving parts | More | Fewer |
 
-The description of `NLSQLTableQueryEngine` follows how LlamaIndex documents it. The matching implementation will replace "Coming soon" in the table above once it is published.
+The matching implementation of `NLSQLTableQueryEngine` is in the repository linked in the table above.
 
 ### 🧭 Which One Fits Your Case
 
@@ -594,7 +594,6 @@ It is also not a finished product. Only one table has a hand-written description
 ---
 
 ## 🚀 Future Work
-* **Add the `NLSQLTableQueryEngine` version.** Publish it as a separate repository and put its link in the table in [Two Approaches to NL-to-SQL](#-two-approaches-to-nl-to-sql).
 * **Describe more tables.** Write hand-written descriptions for several tables, so the schema retrieval is exercised properly.
 * **Refresh the index when tables change.** Detect changes in the table list or descriptions and rebuild the collection automatically.
 * **Block unsafe SQL.** Reject any generated statement that is not a read query before it is executed.
